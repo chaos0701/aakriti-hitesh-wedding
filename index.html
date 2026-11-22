@@ -6,7 +6,8 @@
 <title>Aakriti & Hitesh — Neemrana, 2027</title>
 <link rel="icon" type="image/png" href="logo.png">
 <link rel="preload" as="image" type="image/webp" href="pv/p0000.webp" media="(orientation: landscape)" fetchpriority="high">
-<link rel="preload" as="image" type="image/webp" href="pv-m/p0000.webp" media="(orientation: portrait)" fetchpriority="high">
+<link rel="preload" as="image" type="image/webp" href="film-m.webp" media="(orientation: portrait)" fetchpriority="high">
+<link rel="preload" as="fetch" type="video/mp4" href="film-m.mp4" media="(orientation: portrait)" crossorigin="anonymous">
 <link rel="apple-touch-icon" href="logo.png">
 <meta property="og:title" content="Aakriti & Hitesh — Neemrana, 2027">
 <meta property="og:description" content="Join us at Neemrana Fort-Palace, 31 January to 1 February 2027.">
@@ -48,6 +49,7 @@ p{margin:0}
 .film{position:relative;height:1200vh}
 .stage{position:sticky;top:env(safe-area-inset-top,0px);height:100vh;height:calc(100svh - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px));overflow:hidden;background:#2A1A0E}
 canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+.stage video{position:absolute;inset:0;width:100%;height:100%;display:block;object-fit:cover;pointer-events:none}
 .vignette{position:absolute;inset:0;pointer-events:none;background:radial-gradient(120% 90% at 50% 45%,rgba(30,18,8,0) 55%,rgba(30,18,8,.45) 100%)}
 .progress{position:absolute;left:0;top:0;height:3px;width:100%;background:var(--gold);transform-origin:left;transform:scaleX(var(--p,0))}
 
@@ -467,11 +469,12 @@ body{font-weight:500}
 (function(){
   const N=721, PN=361;
   const pad=n=>String(n).padStart(4,'0');
-  /* Portrait screens (phones) get the portrait cut of the film: 720×1280 in hd-m/, 360×640 previews in pv-m/.
-     Landscape screens get 1920×1080 in hd/ and 960×540 previews in pv/. */
+  /* Landscape screens get 1920×1080 frames in hd/ and 960×540 previews in pv/.
+     Portrait screens (phones) get the portrait cut as one small H.264 video (film-m.mp4: 540×960, 20 fps,
+     a keyframe every 5 frames, no audio) scrubbed by setting currentTime, with film-m.webp as its poster. */
   const MOB=matchMedia('(orientation: portrait)').matches;
-  const SFX=MOB?'-m':'';
-  const pvURL=i=>'pv'+SFX+'/p'+pad(i)+'.webp', hdURL=i=>'hd'+SFX+'/f'+pad(i)+'.webp';
+  const pvURL=i=>'pv/p'+pad(i)+'.webp', hdURL=i=>'hd/f'+pad(i)+'.webp';
+  const FPS=24;
   /* Timeline at 24 fps: [first frame, last frame, scroll length in vh].
      0 names (video held on the first frame) · 1 blessings 0–3 s · 2 Tilak 3–5 s · 4 Sangeet 8–11 s
      6 Haldi 14–16 s · 8 Varmala 18–20 s · 10 Shubh Vivaah 24–26 s · 11 closing card. Segments 3, 5, 7 and 9 carry no text. */
@@ -488,6 +491,37 @@ body{font-weight:500}
   const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
   const narrow=matchMedia('(max-width:760px)');
   let needsDraw=true,lastKey='',curFrame=0,dir=1;
+
+  /* --- phones: one video, seeked to the scroll position --- */
+  let vid=null,vReady=false;
+  if(MOB){
+    vid=document.createElement('video');
+    vid.muted=true;vid.defaultMuted=true;vid.playsInline=true;vid.preload='auto';
+    vid.setAttribute('muted','');vid.setAttribute('playsinline','');vid.setAttribute('webkit-playsinline','');
+    vid.setAttribute('aria-hidden','true');vid.poster='film-m.webp';
+    cv.replaceWith(vid);
+    const pi=new Image();pi.onload=()=>reveal();pi.src='film-m.webp';
+    /* Fetch the whole file first (it is ~2 MB), so every seek is served from memory instead of a range request. */
+    fetch('film-m.mp4').then(r=>{if(!r.ok)throw new Error(r.status);return r.blob()})
+      .then(b=>{vid.src=URL.createObjectURL(b)}).catch(()=>{vid.src='film-m.mp4'});
+    vid.addEventListener('loadeddata',()=>{vReady=true;lastSeek=-1;reveal()});
+    vid.addEventListener('seeked',()=>{needsDraw=true});
+    /* iOS Safari only renders seeks reliably once the video has been played from a user gesture. */
+    const unlock=()=>{
+      removeEventListener('touchstart',unlock);
+      const p=vid.play();if(p&&p.then)p.then(()=>{vid.pause();lastSeek=-1}).catch(()=>{});
+    };
+    addEventListener('touchstart',unlock,{passive:true});
+  }
+  let lastSeek=-1;
+  function seekVideo(f){
+    if(!vReady)return;
+    const t=Math.max(0,Math.min(f/FPS,(vid.duration||30)-.05));
+    /* One seek at a time: queueing seeks while the decoder is busy makes fast flicks lag behind the finger. */
+    if(vid.seeking||(lastSeek>=0&&Math.abs(t-lastSeek)<.025))return;
+    if(!vid.paused)return;
+    lastSeek=t;vid.currentTime=t;
+  }
 
   /* --- low-res preview frames (every second frame): instant scrubbing while full quality loads --- */
   const pimgs=new Array(PN), pready=new Uint8Array(PN);
@@ -510,14 +544,14 @@ body{font-weight:500}
     });
   }
   function worker(){if(cursor>=order.length)return Promise.resolve();return loadOne(order[cursor++]).then(worker)}
-  for(let k=0;k<6;k++)worker();
+  if(!MOB)for(let k=0;k<6;k++)worker();
   function nearestPreview(i){if(pready[i])return i;for(let d=1;d<PN;d++){if(i-d>=0&&pready[i-d])return i-d;if(i+d<PN&&pready[i+d])return i+d}return -1}
 
   /* --- full-quality frames (every frame), fetched nearest the viewer first --- */
   const small=(navigator.deviceMemory&&navigator.deviceMemory<=4)||narrow.matches;
   /* Memory caps: decoded full-quality frames kept on hand, and downloaded frames kept within ±KEEP of the viewer
      (the rest come back from the HTTP cache when needed). */
-  const MAXC=MOB?20:(small?12:16), KEEP=small?100:150, MAXF=6;
+  const MAXC=small?12:16, KEEP=small?100:150, MAXF=6;
   const blobs=new Array(N), fetching=new Set();
   /* Until the coarse preview pass is in, only fetch full-quality frames right at the viewer, so the two don't compete for bandwidth. */
   let bgOn=false,bgNext=0;
@@ -549,10 +583,11 @@ body{font-weight:500}
     while(cache.size>MAXC){let far=-1,fd=-1;for(const k of cache.keys()){const d=Math.abs(k-curFrame);if(d>fd){fd=d;far=k}}
       const bm=cache.get(far);cache.delete(far);if(bm&&bm.close)bm.close()}
   }
-  decodeHD(0);
+  if(!MOB)decodeHD(0);
 
   /* --- canvas --- */
   function size(){
+    if(MOB)return;
     /* Canvas resolution: up to 2× for sharpness, but no more than 2560 px on the long edge (the film itself is 1920 px). */
     const w=stage.clientWidth,h=stage.clientHeight,dpr=Math.min(window.devicePixelRatio||1,2,2560/Math.max(w,h,1));
     cv.width=Math.round(w*dpr);cv.height=Math.round(h*dpr);
@@ -609,7 +644,7 @@ body{font-weight:500}
     if(reduce)cur=target;else{cur+=(target-cur)*.16;if(Math.abs(target-cur)<.02)cur=target}
     if(cur!==prev)dir=cur>prev?1:-1;
     const f=frameAt(cur);curFrame=Math.round(f);
-    draw(curFrame);updateText(cur);
+    if(MOB)seekVideo(f);else draw(curFrame);updateText(cur);
     requestAnimationFrame(tick);
   }
   addEventListener('resize',size,{passive:true});
