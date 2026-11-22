@@ -501,7 +501,7 @@ body{font-weight:500}
   function loadOne(i){
     return new Promise(res=>{
       const im=new Image();im.decoding='async';
-      im.onload=()=>{(im.decode?im.decode().catch(()=>{}):Promise.resolve()).then(()=>{pimgs[i]=im;pready[i]=1;res()})};
+      im.onload=()=>{pimgs[i]=im;pready[i]=1;res()};
       im.onerror=()=>res();im.src=pvURL(i);
     }).then(()=>{
       loaded++;
@@ -515,7 +515,9 @@ body{font-weight:500}
 
   /* --- full-quality frames (every frame), fetched nearest the viewer first --- */
   const small=(navigator.deviceMemory&&navigator.deviceMemory<=4)||narrow.matches;
-  const MAXC=MOB?24:(small?14:32), KEEP=small?160:N, MAXF=6;
+  /* Memory caps: decoded full-quality frames kept on hand, and downloaded frames kept within ±KEEP of the viewer
+     (the rest come back from the HTTP cache when needed). */
+  const MAXC=MOB?20:(small?12:16), KEEP=small?100:150, MAXF=6;
   const blobs=new Array(N), fetching=new Set();
   /* Until the coarse preview pass is in, only fetch full-quality frames right at the viewer, so the two don't compete for bandwidth. */
   let bgOn=false,bgNext=0;
@@ -532,8 +534,8 @@ body{font-weight:500}
     for(let k=1;k<6&&fetching.size<MAXF;k++)fetchHD(curFrame-dir*k);
     /* then stream the rest in order (on small devices only what's near, the rest comes from the HTTP cache later) */
     while(fetching.size<MAXF&&bgNext<N){const i=bgNext++;if(Math.abs(i-curFrame)<=KEEP)fetchHD(i)}
-    if(small&&bgNext>=N)bgNext=Math.max(0,curFrame-KEEP);
-    if(KEEP<N)for(let i=0;i<N;i++)if(i&&blobs[i]&&Math.abs(i-curFrame)>KEEP)blobs[i]=undefined;
+    if(bgNext>=N)bgNext=Math.max(0,curFrame-KEEP);
+    for(let i=0;i<N;i++)if(blobs[i]&&Math.abs(i-curFrame)>KEEP)blobs[i]=undefined;
   }
   const cache=new Map(), pending=new Set();
   const canDecode=typeof createImageBitmap==='function';
@@ -551,8 +553,9 @@ body{font-weight:500}
 
   /* --- canvas --- */
   function size(){
-    const dpr=Math.min(window.devicePixelRatio||1,2);
-    cv.width=Math.round(stage.clientWidth*dpr);cv.height=Math.round(stage.clientHeight*dpr);
+    /* Canvas resolution: up to 2× for sharpness, but no more than 2560 px on the long edge (the film itself is 1920 px). */
+    const w=stage.clientWidth,h=stage.clientHeight,dpr=Math.min(window.devicePixelRatio||1,2,2560/Math.max(w,h,1));
+    cv.width=Math.round(w*dpr);cv.height=Math.round(h*dpr);
     ctx.imageSmoothingEnabled=true;ctx.imageSmoothingQuality='high';needsDraw=true;
   }
   function paint(src,w,h){
