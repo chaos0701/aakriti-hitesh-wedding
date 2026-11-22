@@ -1,6 +1,6 @@
 # Aakriti & Hitesh — wedding website
 
-Static site for GitHub Pages on **thehiteshaakritiwedding.in**: `index.html`, full-quality scroll frames in `hd/` (1920×1080 WebP, every frame of the 24 fps film), low-res preview frames in `pv/`, the portrait cut for phones as one small video `film-m.mp4` (540×960, 20 fps, keyframe every 5 frames, no audio; scrubbed by scroll) with `film-m.webp` as its poster, `logo.png` as the favicon, and a `CNAME` file holding the domain.
+Static site for GitHub Pages on **thehiteshaakritiwedding.in**: `index.html`, full-quality scroll frames in `hd/` (1920×1080 WebP, every frame of the 24 fps film), low-res preview frames in `pv/`, the six illustrated event frames for phones in `frames/` (1080×1913 JPEG, cross-faded by scroll), `logo.png` as the favicon, and a `CNAME` file holding the domain.
 
 ## 1. Publish to GitHub Pages
 
@@ -16,7 +16,7 @@ This creates a public repo, pushes the site, turns on Pages from `main` and sets
 **Or on github.com**
 
 1. Create a new **public** repository (for example `aakriti-hitesh-wedding`).
-2. Choose **uploading an existing file** and drag in everything from this folder, including `hd`, `pv`, `film-m.mp4`, `film-m.webp` and `CNAME`. Commit.
+2. Choose **uploading an existing file** and drag in everything from this folder, including `hd`, `pv`, `frames` and `CNAME`. Commit.
 3. **Settings → Pages**: Source *Deploy from a branch*, branch `main`, folder `/ (root)`. Save.
 4. On the same page, under **Custom domain**, enter `thehiteshaakritiwedding.in` and save.
 
@@ -46,7 +46,8 @@ Optional but recommended: verify the domain under your GitHub account **Settings
 
 ## Notes
 
-- Keep `hd/`, `pv/`, `film-m.mp4` and `film-m.webp` next to `index.html`. Landscape screens stream the frames from `hd/` and `pv/`, nearest the viewer's scroll position first; portrait screens download only `film-m.mp4` and seek it.
-- To rebuild the phone video from the portrait source:
-  `ffmpeg -i portrait.mp4 -an -vf "scale=540:-2,fps=20" -c:v libx264 -profile:v main -crf 33 -preset slow -pix_fmt yuv420p -g 5 -movflags +faststart film-m.mp4`
+- Keep `hd/`, `pv/` and `frames/` next to `index.html`. Landscape screens stream the frames from `hd/` and `pv/`, nearest the viewer's scroll position first; portrait screens download only the six images in `frames/`, the first one up front and the rest behind it.
+- To replace a phone frame, export the 1536×2720 source at 1080 px wide and keep the file name, for example:
+  `sips -s format jpeg -s formatOptions 72 -Z 1913 source.png --out frames/1-tilak.jpg`
+  The order and per-frame crop (`pos`) live in the `FRAMES` list in `index.html`.
 - To preview locally, run `python3 -m http.server` in this folder and open http://localhost:8000. Double-clicking `index.html` won't load the full-quality frames.

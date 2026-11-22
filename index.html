@@ -6,8 +6,7 @@
 <title>Aakriti & Hitesh — Neemrana, 2027</title>
 <link rel="icon" type="image/png" href="logo.png">
 <link rel="preload" as="image" type="image/webp" href="pv/p0000.webp" media="(orientation: landscape)" fetchpriority="high">
-<link rel="preload" as="image" type="image/webp" href="film-m.webp" media="(orientation: portrait)" fetchpriority="high">
-<link rel="preload" as="fetch" type="video/mp4" href="film-m.mp4" media="(orientation: portrait)" crossorigin="anonymous">
+<link rel="preload" as="image" type="image/jpeg" href="frames/0-invite.jpg" media="(orientation: portrait)" fetchpriority="high">
 <link rel="apple-touch-icon" href="logo.png">
 <meta property="og:title" content="Aakriti & Hitesh — Neemrana, 2027">
 <meta property="og:description" content="Join us at Neemrana Fort-Palace, 31 January to 1 February 2027.">
@@ -49,7 +48,15 @@ p{margin:0}
 .film{position:relative;height:1200vh}
 .stage{position:sticky;top:env(safe-area-inset-top,0px);height:100vh;height:calc(100svh - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px));overflow:hidden;background:#2A1A0E}
 canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
-.stage video{position:absolute;inset:0;width:100%;height:100%;display:block;object-fit:cover;pointer-events:none}
+/* Phones: the illustrated event frames, stacked and cross-faded by scroll */
+.slides{position:absolute;inset:0}
+.slides img{position:absolute;inset:0;width:100%;height:100%;display:block;object-fit:cover;opacity:0;visibility:hidden;transform-origin:50% 60%;will-change:opacity,transform;pointer-events:none}
+.slides img:first-child{opacity:1;visibility:visible}
+.dim{position:absolute;inset:0;background:#1E1208;opacity:0;pointer-events:none}
+.tag{position:absolute;left:50%;top:.9rem;transform:translateX(-50%);display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:.2rem .5rem;width:max-content;max-width:calc(100% - 2rem);background:rgba(250,244,232,.94);color:var(--ink);border:1px solid var(--bronze-gold);border-radius:999px;padding:.3rem 1rem;font-size:.98rem;line-height:1.35;text-align:center;box-shadow:0 6px 20px rgba(30,18,8,.3);opacity:0;visibility:hidden;pointer-events:none}
+.tag em{color:var(--ink-soft);font-weight:500}
+.tag strong{font-weight:600}
+.chapter.sr{position:absolute!important;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap;opacity:1!important;visibility:visible!important}
 .vignette{position:absolute;inset:0;pointer-events:none;background:radial-gradient(120% 90% at 50% 45%,rgba(30,18,8,0) 55%,rgba(30,18,8,.45) 100%)}
 .progress{position:absolute;left:0;top:0;height:3px;width:100%;background:var(--gold);transform-origin:left;transform:scaleX(var(--p,0))}
 
@@ -231,7 +238,7 @@ body{font-weight:500}
       </div>
     </div>
 
-    <div class="chapter" data-seg="1">
+    <div class="chapter" data-seg="1" data-mseg="1">
       <div class="card">
         <svg class="finial"><use href="#finial"/></svg>
         <p class="when">With the blessings of their families</p>
@@ -288,7 +295,7 @@ body{font-weight:500}
       </div>
     </div>
 
-    <div class="chapter finale" data-seg="11">
+    <div class="chapter finale" data-seg="11" data-mseg="7">
       <div class="card">
         <svg class="finial"><use href="#finial"/></svg>
         <h2 class="title">We can’t wait to celebrate with you</h2>
@@ -470,59 +477,97 @@ body{font-weight:500}
   const N=721, PN=361;
   const pad=n=>String(n).padStart(4,'0');
   /* Landscape screens get 1920×1080 frames in hd/ and 960×540 previews in pv/.
-     Portrait screens (phones) get the portrait cut as one small H.264 video (film-m.mp4: 540×960, 20 fps,
-     a keyframe every 5 frames, no audio) scrubbed by setting currentTime, with film-m.webp as its poster. */
+     Portrait screens (phones) get six illustrated event frames from frames/ (1080×1913 JPEG), stacked and
+     cross-faded by scroll. The frames carry each event's name and time themselves, so the event cards only
+     stay on for screen readers there. */
   const MOB=matchMedia('(orientation: portrait)').matches;
   const pvURL=i=>'pv/p'+pad(i)+'.webp', hdURL=i=>'hd/f'+pad(i)+'.webp';
   const FPS=24;
   /* Timeline at 24 fps: [first frame, last frame, scroll length in vh].
      0 names (video held on the first frame) · 1 blessings 0–3 s · 2 Tilak 3–5 s · 4 Sangeet 8–11 s
      6 Haldi 14–16 s · 8 Varmala 18–20 s · 10 Shubh Vivaah 24–26 s · 11 closing card. Segments 3, 5, 7 and 9 carry no text. */
-  const SEGS=[[0,0,70],[0,72,110],[72,120,110],[120,192,90],[192,264,130],[264,336,90],[336,384,110],[384,432,80],[432,480,110],[480,576,100],[576,624,120],[624,720,105]];
-  const GAP=new Set([3,5,7,9]);
+  const DSEGS=[[0,0,70],[0,72,110],[72,120,110],[120,192,90],[192,264,130],[264,336,90],[336,384,110],[384,432,80],[432,480,110],[480,576,100],[576,624,120],[624,720,105]];
+  /* Phones: [-, -, scroll length in vh]. 0 invitation frame · 1 blessings card over it · 2 Tilak · 3 Mehandi & Sangeet
+     4 Haldi · 5 Jaimala · 6 Pheras · 7 closing card over the Pheras. Each frame fades in over the first 40% of its segment. */
+  const MSEGS=[[0,0,80],[0,0,120],[0,0,110],[0,0,110],[0,0,110],[0,0,110],[0,0,110],[0,0,100]];
+  const SEGS=MOB?MSEGS:DSEGS;
+  const GAP=new Set(MOB?[]:[3,5,7,9]);
   const LAST=SEGS.length-1;
   const cum=[];let tot=0;SEGS.forEach(s=>{cum.push(tot);tot+=s[2]});
   const cv=document.getElementById('cv'), ctx=cv.getContext('2d');
   const film=document.getElementById('film'), stage=document.getElementById('stage');
   const loader=document.getElementById('loader'), ld=document.getElementById('ld');
   film.style.height=(tot+100)+'vh';
-  const chapters=[...document.querySelectorAll('.chapter')].map(el=>({el,k:+el.dataset.seg,rail:el.dataset.rail,centered:el.classList.contains('hero')||el.classList.contains('finale'),hero:el.classList.contains('hero'),finale:el.classList.contains('finale')}));
+  /* On phones only chapters with a phone segment (data-mseg) are shown; the rest stay for screen readers. */
+  const chapters=[...document.querySelectorAll('.chapter')].filter(el=>{
+    if(!MOB||el.dataset.mseg!==undefined)return true;
+    el.classList.add('sr');return false;
+  }).map(el=>({el,k:+(MOB?el.dataset.mseg:el.dataset.seg),rail:el.dataset.rail,centered:el.classList.contains('hero')||el.classList.contains('finale'),hero:el.classList.contains('hero'),finale:el.classList.contains('finale')}));
   const railItems=[...document.querySelectorAll('#rail li')];
   const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
   const narrow=matchMedia('(max-width:760px)');
   let needsDraw=true,lastKey='',curFrame=0,dir=1;
 
-  /* --- phones: one video, seeked to the scroll position --- */
-  let vid=null,vReady=false;
+  /* --- phones: illustrated frames, cross-faded by scroll --- */
+  /* pos keeps each frame's banner in view when a narrow screen crops the sides; tag is the event's dress colours. */
+  const FRAMES=[
+    {src:'frames/0-invite.jpg',seg:0,pos:'30% 50%'},
+    {src:'frames/1-tilak.jpg',seg:2,pos:'70% 50%',tag:['Theme','Pastel ethnics',['#F2C9CF','#CFE3D2','#D6D3EC','#F6E3C4']]},
+    {src:'frames/2-sangeet.jpg',seg:3,pos:'35% 50%',tag:['Colours','Black, gold & metallics',['#1E1A17','#D3AE66','#C9CBD1']]},
+    {src:'frames/3-haldi.jpg',seg:4,pos:'50% 50%',tag:['Colours','Yellow, orange & white',['#F5C518','#F28C28','#FFFFFF']]},
+    {src:'frames/4-jaimala.jpg',seg:5,pos:'35% 50%',tag:['Colours','Ivory, champagne & gold',['#FBF6EA','#E9D7B0','#C9A24A']]},
+    {src:'frames/5-pheras.jpg',seg:6,pos:'35% 50%'}
+  ];
+  let dim=null;
   if(MOB){
-    vid=document.createElement('video');
-    vid.muted=true;vid.defaultMuted=true;vid.playsInline=true;vid.preload='auto';
-    vid.setAttribute('muted','');vid.setAttribute('playsinline','');vid.setAttribute('webkit-playsinline','');
-    vid.setAttribute('aria-hidden','true');vid.poster='film-m.webp';
-    cv.replaceWith(vid);
-    const pi=new Image();pi.onload=()=>reveal();pi.src='film-m.webp';
-    /* Fetch the whole file first (it is ~2 MB), so every seek is served from memory instead of a range request. */
-    fetch('film-m.mp4').then(r=>{if(!r.ok)throw new Error(r.status);return r.blob()})
-      .then(b=>{vid.src=URL.createObjectURL(b)}).catch(()=>{vid.src='film-m.mp4'});
-    vid.addEventListener('loadeddata',()=>{vReady=true;lastSeek=-1;reveal()});
-    vid.addEventListener('seeked',()=>{needsDraw=true});
-    /* iOS Safari only renders seeks reliably once the video has been played from a user gesture. */
-    const unlock=()=>{
-      removeEventListener('touchstart',unlock);
-      const p=vid.play();if(p&&p.then)p.then(()=>{vid.pause();lastSeek=-1}).catch(()=>{});
+    const box=document.createElement('div');box.className='slides';box.setAttribute('aria-hidden','true');
+    FRAMES.forEach(f=>{
+      const im=document.createElement('img');im.alt='';im.decoding='async';im.style.objectPosition=f.pos;
+      box.appendChild(im);f.el=im;f.css='';
+      if(f.tag){
+        const t=document.createElement('p');t.className='tag';t.setAttribute('aria-hidden','true');
+        const [label,text,sw]=f.tag;
+        t.innerHTML='<em></em><strong></strong><span class="sw">'+sw.map(c=>'<i style="background:'+c+'"></i>').join('')+'</span>';
+        t.querySelector('em').textContent=label;t.querySelector('strong').textContent=text;
+        f.tagEl=t;f.tagO='';
+      }
+    });
+    dim=document.createElement('div');dim.className='dim';
+    cv.replaceWith(box);box.after(dim);
+    const vig=stage.querySelector('.vignette');
+    FRAMES.forEach(f=>{if(f.tagEl)vig.after(f.tagEl)});
+    /* The first frame opens the gates; the others load one after another behind it. */
+    let next=0;
+    const loadNext=()=>{
+      if(next>=FRAMES.length)return;
+      const im=FRAMES[next++].el;
+      im.onload=im.onerror=()=>{if(im===FRAMES[0].el)reveal();loadNext()};
+      im.src=FRAMES[next-1].src;
     };
-    addEventListener('touchstart',unlock,{passive:true});
+    loadNext();
   }
-  let lastSeek=-1;
-  function seekVideo(f){
-    if(!vReady)return;
-    const t=Math.max(0,Math.min(f/FPS,(vid.duration||30)-.05));
-    /* One seek at a time: queueing seeks while the decoder is busy makes fast flicks lag behind the finger. */
-    if(vid.seeking||(lastSeek>=0&&Math.abs(t-lastSeek)<.025))return;
-    if(!vid.paused)return;
-    lastSeek=t;vid.currentTime=t;
+  function paintSlides(s){
+    let covered=false;
+    for(let i=FRAMES.length-1;i>=0;i--){
+      const f=FRAMES[i],k=f.seg,st=cum[k],len=SEGS[k][2];
+      const o=i===0?1:ss(0,.4,(s-st)/len);
+      /* each frame settles from a slight zoom over the time it is on screen */
+      const end=i+1<FRAMES.length?cum[FRAMES[i+1].seg]+SEGS[FRAMES[i+1].seg][2]*.4:tot;
+      const z=reduce?1:1.07-.07*Math.min(1,Math.max(0,(s-st)/(end-st)));
+      const vis=o>.001&&!covered;
+      const css=vis?o.toFixed(3)+'|'+z.toFixed(4):'';
+      if(css!==f.css){
+        f.css=css;f.el.style.visibility=vis?'visible':'hidden';
+        if(vis){f.el.style.opacity=o.toFixed(3);f.el.style.transform='scale('+z.toFixed(4)+')'}
+      }
+      if(o>=1)covered=true;
+      if(f.tagEl){
+        const t=(s-st)/len,to=(t<0||t>1)?0:ss(.32,.46,t)*(1-ss(.84,.98,t));
+        const ts=to.toFixed(3);
+        if(ts!==f.tagO){f.tagO=ts;f.tagEl.style.opacity=ts;f.tagEl.style.visibility=to>.01?'visible':'hidden'}
+      }
+    }
   }
-
   /* --- low-res preview frames (every second frame): instant scrubbing while full quality loads --- */
   const pimgs=new Array(PN), pready=new Uint8Array(PN);
   const order=[],seen=new Set();
@@ -618,7 +663,7 @@ body{font-weight:500}
   function frameAt(s){const k=segAt(s),g=SEGS[k],t=Math.min(1,Math.max(0,(s-cum[k])/g[2]));return g[0]+t*(g[1]-g[0])}
   const ss=(e0,e1,x)=>{const t=Math.min(1,Math.max(0,(x-e0)/(e1-e0)));return t*t*(3-2*t)};
   function updateText(s){
-    const cur=segAt(s);let railOn=-1;
+    const cur=segAt(s);let railOn=-1,dimO=0;
     chapters.forEach(c=>{
       const t=(s-cum[c.k])/SEGS[c.k][2];
       let o;
@@ -631,9 +676,11 @@ body{font-weight:500}
       const tx=(c.centered||narrow.matches)?'translateX(-50%) ':'';
       el.style.transform=tx+((c.hero&&!narrow.matches)?'translateY(calc(-50% + '+(c.hero?Math.max(0,-shift):shift).toFixed(1)+'px))':'translateY('+shift.toFixed(1)+'px)');
       if(c.rail!==undefined&&s>=cum[c.k])railOn=Math.max(railOn,+c.rail);
+      if(!c.hero)dimO=Math.max(dimO,o);
     });
+    if(dim)dim.style.opacity=(dimO*.4).toFixed(3);
     railItems.forEach((li,i)=>{li.classList.toggle('on',i===railOn);li.classList.toggle('done',i<railOn)});
-    stage.style.setProperty('--rail',(cur>=2&&cur<LAST&&!GAP.has(cur))?1:0);
+    stage.style.setProperty('--rail',(!MOB&&cur>=2&&cur<LAST&&!GAP.has(cur))?1:0);
     stage.style.setProperty('--cue',s<SEGS[0][2]*.2?1:0);
     stage.style.setProperty('--p',(s/tot).toFixed(4));
   }
@@ -643,8 +690,8 @@ body{font-weight:500}
     const prev=cur;
     if(reduce)cur=target;else{cur+=(target-cur)*.16;if(Math.abs(target-cur)<.02)cur=target}
     if(cur!==prev)dir=cur>prev?1:-1;
-    const f=frameAt(cur);curFrame=Math.round(f);
-    if(MOB)seekVideo(f);else draw(curFrame);updateText(cur);
+    if(MOB)paintSlides(cur);else{curFrame=Math.round(frameAt(cur));draw(curFrame)}
+    updateText(cur);
     requestAnimationFrame(tick);
   }
   addEventListener('resize',size,{passive:true});
