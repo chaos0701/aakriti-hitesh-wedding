@@ -114,12 +114,7 @@ canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
 .loader span{font-style:italic;color:var(--ink-soft)}
 
 @media (max-width:760px){
-  /* Phones: a slim vertical step bar on the right, joined by a line that fills in as you pass each event */
-  .rail{right:.6rem;padding:.7rem .7rem;gap:.8rem;font-size:.74rem;line-height:1.2;border-radius:12px;background:rgba(250,244,232,.86);box-shadow:0 8px 22px rgba(30,18,8,.3)}
-  .rail li{position:relative;gap:.5rem}
-  .rail li::after{flex:none;width:.5rem;height:.5rem;background:var(--ivory)}
-  .rail li:not(:last-child)::before{content:"";position:absolute;right:calc(.25rem + 1px);top:50%;width:1px;height:calc(100% + .8rem);background:var(--bronze-gold);opacity:.45;z-index:-1}
-  .rail li.done::before{opacity:1;width:2px;right:.25rem}
+  .rail{display:none}
   .chapter{left:50%;transform:translateX(-50%);bottom:calc(1.25rem + env(safe-area-inset-bottom,0px))}
   .hero{top:auto;bottom:7.5rem}
   .card{--archh:5rem}
@@ -744,10 +739,8 @@ body{font-weight:500}
       if(!c.hero)dimO=Math.max(dimO,o);
     });
     if(dim)dim.style.opacity=(dimO*.4).toFixed(3);
-    /* phones hide the event cards, so the step bar follows the event frames instead */
-    if(MOB)FRAMES.forEach((f,i)=>{if(i>0&&s>=cum[f.seg])railOn=i-1});
     railItems.forEach((li,i)=>{li.classList.toggle('on',i===railOn);li.classList.toggle('done',i<railOn)});
-    stage.style.setProperty('--rail',(cur>=2&&cur<LAST&&!GAP.has(cur))?1:0);
+    stage.style.setProperty('--rail',(!MOB&&cur>=2&&cur<LAST&&!GAP.has(cur))?1:0);
     const cueOn=s<SEGS[0][2]*.2;stage.style.setProperty('--cue',cueOn?1:0);
     if(cueOn!==cueWas){cueWas=cueOn;cue.style.pointerEvents=cueOn?'':'none';cue.tabIndex=cueOn?0:-1}
     stage.style.setProperty('--p',(s/tot).toFixed(4));
