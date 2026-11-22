@@ -1,6 +1,6 @@
 # Aakriti & Hitesh — wedding website
 
-Static site for GitHub Pages on **thehiteshaakritiwedding.in**: `index.html`, full-quality scroll frames in `hd/`, `logo.png` as the favicon, and a `CNAME` file holding the domain.
+Static site for GitHub Pages on **thehiteshaakritiwedding.in**: `index.html`, full-quality scroll frames in `hd/` (1920×1080 WebP, every frame of the 24 fps film), low-res preview frames in `pv/`, `logo.png` as the favicon, and a `CNAME` file holding the domain.
 
 ## 1. Publish to GitHub Pages
 
@@ -16,7 +16,7 @@ This creates a public repo, pushes the site, turns on Pages from `main` and sets
 **Or on github.com**
 
 1. Create a new **public** repository (for example `aakriti-hitesh-wedding`).
-2. Choose **uploading an existing file** and drag in everything from this folder, including `hd` and `CNAME`. Commit.
+2. Choose **uploading an existing file** and drag in everything from this folder, including `hd`, `pv` and `CNAME`. Commit.
 3. **Settings → Pages**: Source *Deploy from a branch*, branch `main`, folder `/ (root)`. Save.
 4. On the same page, under **Custom domain**, enter `thehiteshaakritiwedding.in` and save.
 
@@ -46,5 +46,5 @@ Optional but recommended: verify the domain under your GitHub account **Settings
 
 ## Notes
 
-- Keep `hd/` next to `index.html`; the page streams the full-quality frames from there.
+- Keep `hd/` and `pv/` next to `index.html`; the page streams the frames from there, nearest the viewer's scroll position first.
 - To preview locally, run `python3 -m http.server` in this folder and open http://localhost:8000. Double-clicking `index.html` won't load the full-quality frames.
