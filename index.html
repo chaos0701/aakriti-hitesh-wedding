@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Aakriti & Hitesh — Neemrana, 2027</title>
+<script>/* invite.thehiteshaakritiwedding.in names the bride's family first */if(/^invite\./i.test(location.hostname))document.documentElement.classList.add("bride-first")</script>
 <link rel="icon" type="image/png" href="logo.png">
 <link rel="preload" as="image" type="image/webp" href="pv/p0000.webp" media="(orientation: landscape)" fetchpriority="high">
 <link rel="preload" as="image" type="image/jpeg" href="frames/0-invite.jpg" media="(orientation: portrait)" fetchpriority="high">
@@ -285,9 +286,10 @@ body{font-weight:500}
       <div class="card blessings">
         <svg class="finial"><use href="#finial"/></svg>
         <p class="when">With the blessings of their families</p>
-        <p class="title">Jitendra and Meena Raghuvanshi</p>
+        <p class="title" id="host-a">Jitendra and Meena Raghuvanshi</p>
         <p class="when" style="margin:.1rem 0 .1rem">and</p>
-        <p class="title" style="margin-top:0">Subhash Chand and Neeraj Malik</p>
+        <p class="title" id="host-b" style="margin-top:0">Subhash Chand and Neeraj Malik</p>
+        <script>if(document.documentElement.classList.contains("bride-first")){var a=document.getElementById("host-a"),b=document.getElementById("host-b"),t=a.textContent;a.textContent=b.textContent;b.textContent=t}</script>
         <p class="line">invite you to celebrate the wedding of their children, Aakriti and Hitesh.</p>
       </div>
     </div>
@@ -497,6 +499,7 @@ body{font-weight:500}
       <div class="contact"><svg class="finial"><use href="#finial"/></svg><p class="side">Groom’s family</p><p class="who">Priya and Diljit Raghuvanshi</p></div>
       <div class="contact"><svg class="finial"><use href="#finial"/></svg><p class="side">Bride’s family</p><p class="who">Astha and Harsh Malik</p></div>
     </div>
+    <script>if(document.documentElement.classList.contains("bride-first")){var c=document.querySelector(".rsvp .contacts");c.insertBefore(c.children[1],c.children[0])}</script>
   </section>
 </section>
 
