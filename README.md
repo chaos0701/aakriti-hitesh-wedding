@@ -44,6 +44,14 @@ DNS can take from a few minutes to a few hours to update. When **Settings → Pa
 
 Optional but recommended: verify the domain under your GitHub account **Settings → Pages → Add a domain**, so no one else's repository can claim it.
 
+## 4. The invite.thehiteshaakritiwedding.in copy
+
+GitHub Pages allows one custom domain per repository, so the same site is also published from a second repo, `aakriti-hitesh-wedding-invite`, whose only difference is its `CNAME` file.
+
+- After every push to the main site, run `./deploy-invite.sh` to copy the current commit across.
+- DNS at the registrar: `CNAME`, host `invite`, value `<your-github-username>.github.io`.
+- Once the certificate is issued: `gh api -X PUT repos/<your-github-username>/aakriti-hitesh-wedding-invite/pages -F https_enforced=true`
+
 ## Notes
 
 - Keep `hd/`, `pv/` and `frames/` next to `index.html`. Landscape screens stream the frames from `hd/` and `pv/`, nearest the viewer's scroll position first; portrait screens download only the six images in `frames/`, the first one up front and the rest behind it.
